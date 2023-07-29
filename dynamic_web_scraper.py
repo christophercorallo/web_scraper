@@ -39,7 +39,7 @@ sport.click()
 # wait for date to be visible
 try:
     date = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//*[text() = 'Fri Mar 03']"))
+        EC.presence_of_element_located((By.XPATH, "//*[text() = 'Sat Feb 25']"))
     )
     date.click()
 
@@ -47,19 +47,32 @@ except:
     print('Date is not visible')
     driver.quit()
 
-# click boxscore of game
-boxscore = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.XPATH, "(//*[text() = 'Box Score']/..)"))
-)
-boxscore.click()
+# create stats dataframe
+df = pd.DataFrame(columns = ['Date','Notes','Home Team','Away Team','Score','Player Team','Player','Number','Position','Starter','MIN','FGM-A','3PM-A','FTM-A','OREB','DREB','REB','AST','STL','BLK','TO','PF','PTS'])
 
-# create soup
-soup = BeautifulSoup(driver.page_source, 'html.parser')
+# find all games with a box score on page
+num_games = len(WebDriverWait(driver, 10).until(
+    EC.presence_of_all_elements_located((By.XPATH, "//span[text() = 'Box Score']"))
+))
+
+for i in range(num_games):
+    # find all gaems with a box score on page again (selenium object not valid after leaving page)
+    # scroll down to for visibility of box score button
+    driver.execute_script(f"window.scrollTo(0,{i*200});")
+    # grab notes of game (normally type of game and/or league)
+    try:
+        notes = WebDriverWait(driver, 3).until(
+            EC.visibility_of_element_located((By.XPATH, f"(//span[text() = 'Box Score']/../../..//span[contains(@class, 'notes')])[{i+1}]"))
+        ).text
+    except:
+        notes = None
+    # click on box score
+    box_score = driver.find_element(By.XPATH, f"(//span[text() = 'Box Score']/..)[{i+1}]")
+    box_score.click()
+    # create soup
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    scrape_game_stats(soup,notes,df)
+    driver.back()
+    # print('HOORAY!!')
 
 driver.quit()
-
-df = pd.DataFrame(columns = ['Team','Player','Number','Position','Starter','MIN','FGM-A','3PM-A','FTM-A','OREB','DREB','REB','AST','STL','BLK','TO','PF','PTS'])
-
-scrape_game_stats(soup, df)
-
-print('HOORAY!!')
