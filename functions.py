@@ -1,3 +1,5 @@
+import string
+
 def scrape_game_stats(game_soup, notes, df):
     """add STARTER and RESERVE stats for BOTH teams"""
     
@@ -38,7 +40,7 @@ def append_player_stats(player, shared_stats, player_team, starter, df):
         
         # find player position
         try:
-            position = (player.find("span", class_="position").string)[2:]
+            position = (player.find("span", class_="position").string)[3:]
         except:
             position = None
 
@@ -51,13 +53,13 @@ def append_player_stats(player, shared_stats, player_team, starter, df):
             'Score': shared_stats[4],
             'Player Team': player_team,
             'Player': player.find(class_="player-name").string,
-            'Number': (player.find("span", class_="uniform").string)[:-3],
+            'Number': (player.find("span", class_="uniform").string).strip(),
             'Position': position,
             'Starter': starter,
             'MIN': number_stats[0].string,
-            'FGM-A': number_stats[1].string,
-            '3PM-A': number_stats[2].string,
-            'FTM-A': number_stats[3].string,
+            'FGM-A': number_stats[1].string.translate({ord(c): None for c in string.whitespace}),
+            '3PM-A': number_stats[2].string.translate({ord(c): None for c in string.whitespace}),
+            'FTM-A': number_stats[3].string.translate({ord(c): None for c in string.whitespace}),
             'OREB': number_stats[4].string,
             'DREB': number_stats[5].string,
             'REB': number_stats[6].string,
@@ -66,7 +68,7 @@ def append_player_stats(player, shared_stats, player_team, starter, df):
             'BLK': number_stats[9].string,
             'TO': number_stats[10].string,
             'PF': number_stats[11].string,
-            'PTS': number_stats[12].string
+            'PTS': number_stats[12].string.strip()
         }
         # add player data to dataframe
         df.loc[len(df)] = new_row
